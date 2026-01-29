@@ -1,0 +1,18 @@
+{
+  "name": "projetobrigada_backend",
+  "version": "1.0.0",
+  "description": "projeto do servico backend do projeto iffar/brigada",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "seed": "node src/db/seed.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "better-sqlite3": "^12.6.2",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1"
+  }
+}
