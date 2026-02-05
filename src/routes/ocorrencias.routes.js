@@ -3,7 +3,7 @@ const db = require('../db/db')
 const { finalizarOcorrencia } = require('../services/finalizarOcorrencia.service')
 const router = express.Router()
 
-// ABRIR SOS
+// ABRIR OCORRENCIA
 router.post('/', (req, res) => {
   const { usuario_id, latitude, longitude } = req.body
 
@@ -32,6 +32,8 @@ router.patch('/:id/status', (req, res) => {
   res.json({ sucesso: true })
 })
 
+
+//FINALIZA A OCORRENCIA
 router.post('/:id/finalizada', (req, res) => {
   try {
     const { descricao } = req.body;
