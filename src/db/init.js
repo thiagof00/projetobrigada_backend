@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS dispositivo (
 CREATE TABLE IF NOT EXISTS ocorrencia (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   usuario_id INTEGER NOT NULL,
+  brigadista_id INTEGER,
   latitude REAL,
   longitude REAL,
   status TEXT CHECK(status IN ('ABERTA','EM_ATENDIMENTO','FINALIZADA')) DEFAULT 'ABERTA',
