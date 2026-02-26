@@ -14,6 +14,7 @@ function encontrarBrigadistaMaisProximo(latitude, longitude, raioMaxKm = 50) {
 
   for (const [userId, data] of brigadistasOnline.entries()) {
     if (data.ocupado) continue
+    if (data.notificadoOcorrencia != null) continue // já aguarda resposta de outra ocorrência
 
     // Brigadista sem localização: guarda como fallback
     if (!data.latitude || !data.longitude) {
