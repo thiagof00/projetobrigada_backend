@@ -23,6 +23,13 @@ function ocorrenciasRoutes(io) {
       return false
     }
 
+    // Marca o brigadista como aguardando resposta desta ocorrência
+    const brigadistasOnline = getBrigadistasOnline()
+    const brigadistaOnline = brigadistasOnline.get(candidato.userId)
+    if (brigadistaOnline) {
+      brigadistaOnline.notificadoOcorrencia = ocorrenciaId
+    }
+
     io.to(candidato.socketId).emit('NOVA_OCORRENCIA', {
       ocorrenciaId,
       latitude,
@@ -47,18 +54,28 @@ function ocorrenciasRoutes(io) {
 
     if (!brigadista || brigadista.ocupado) return
 
-    // Busca a ocorrência aberta mais antiga ainda sem atendimento
-    const pendente = db.prepare(`
+    // Busca a ocorrência aberta mais antiga que ainda não tem nenhum brigadista sendo notificado
+    // (ou seja, que não está na fila "notificadoOcorrencia" de nenhum brigadista online)
+    const ocorrenciasNotificadas = new Set(
+      [...brigadistasOnline.values()]
+        .map(b => b.notificadoOcorrencia)
+        .filter(id => id != null)
+    )
+
+    const pendentes = db.prepare(`
       SELECT id, latitude, longitude
       FROM ocorrencia
       WHERE status = 'ABERTA'
       ORDER BY criado_em ASC
-      LIMIT 1
-    `).get()
+    `).all()
+
+    const pendente = pendentes.find(o => !ocorrenciasNotificadas.has(o.id))
 
     if (!pendente) return
 
     console.log(`🔄 Redistribuindo ocorrência #${pendente.id} para brigadista ${brigadistaId}`)
+
+    brigadista.notificadoOcorrencia = pendente.id
 
     io.to(brigadista.socketId).emit('NOVA_OCORRENCIA', {
       ocorrenciaId: pendente.id,
@@ -116,8 +133,11 @@ function ocorrenciasRoutes(io) {
     const brigadistasOnline = getBrigadistasOnline()
     const brigadistaQueRecusou = brigadistasOnline.get(brigadista_id)
 
-    // Marca como ocupado momentaneamente para não ser selecionado de novo agora
-    if (brigadistaQueRecusou) brigadistaQueRecusou.ocupado = true
+    // Libera a notificação pendente e marca como ocupado momentaneamente para não ser selecionado
+    if (brigadistaQueRecusou) {
+      brigadistaQueRecusou.notificadoOcorrencia = null
+      brigadistaQueRecusou.ocupado = true
+    }
 
     const notificou = notificarBrigadistaMaisProximo(
       ocorrenciaId,
@@ -160,6 +180,7 @@ function ocorrenciasRoutes(io) {
     const brigadistaOnline = brigadistasOnline.get(brigadista_id)
     if (brigadistaOnline) {
       brigadistaOnline.ocupado = true
+      brigadistaOnline.notificadoOcorrencia = null // limpeza: não aguarda mais resposta
     }
 
     // 🔎 Busca dados para notificar o cliente
