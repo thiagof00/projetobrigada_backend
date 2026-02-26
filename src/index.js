@@ -1,16 +1,33 @@
-require("dotenv").config()
-const express = require("express")
-const server = express()
-const port = process.env.PORT_SERVER
+const express = require('express')
+const http = require('http')
+const cors = require('cors')
+const { Server } = require('socket.io')
 
+const { setupPresence } = require('./sockets/presence')
+const ocorrenciasRoutes = require('./routes/ocorrencias.routes')
 
-server.use(express.json())
 require('./db/init')
 
-server.use('/usuarios', require('./routes/usuarios.routes'))
-server.use('/ocorrencias', require('./routes/ocorrencias.routes'))
-server.use('/logs', require('./routes/logs.routes'))
+const app = express()
+app.use(cors())
+const server = http.createServer(app)
+const io = new Server(server, {
+  cors: { origin: '*' }
+})
 
-server.listen(port, () => {
-  console.log(`🔥 API rodando em http://localhost:${port}`)
+app.use(express.json())
+
+// ativa controle de presença
+setupPresence(io)
+
+// usa rotas passando io
+app.use('/ocorrencias', ocorrenciasRoutes(io))
+app.use('/usuarios', require('./routes/usuarios.routes'))
+app.use('/logs', require('./routes/logs.routes'))
+
+
+
+
+server.listen(3432, () => {
+  console.log('🚨 API SOS rodando com WebSocket')
 })

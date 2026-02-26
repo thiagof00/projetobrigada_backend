@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Cliente</title>
+</head>
+<body>
+<h2>Cliente</h2>
+
+<button onclick="abrir()">Abrir Ocorrência</button>
+
+<script src="http://localhost:3432/socket.io/socket.io.js"></script>
+<script>
+  const socket = io("http://localhost:3432");
+  const usuarioId = 1
+
+  socket.on("connect", () => {
+    console.log("📱 Cliente conectado:", socket.id);
+
+    socket.emit("entrar_cliente", {usuarioId})
+  });
+
+  socket.on("OCORRENCIA_EM_ANDAMENTO", (data) => {
+    console.log("👨‍🚒 Brigadista assumiu:", data);
+  });
+
+  // ✅ Recebe quando finalizar
+  socket.on("OCORRENCIA_FINALIZADA", (data) => {
+    console.log("✅ Finalizada:", data);
+
+    document.getElementById("status").innerHTML = `
+      <h3>✅ Ocorrência finalizada</h3>
+      <p>ID: ${data.ocorrenciaId}</p>
+    `;
+  });
+
+  function abrir() {
+    fetch("http://localhost:3432/ocorrencias", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        usuario_id: usuarioId,
+        latitude: -29.761,
+        longitude: -57.085
+      })
+    });
+  }
+</script>
+</body>
+</html>
