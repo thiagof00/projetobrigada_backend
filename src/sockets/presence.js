@@ -15,6 +15,7 @@ function setupPresence(io) {
         latitude: null,
         longitude: null,
         ocupado: false,
+        notificadoOcorrencia: null, 
         lastUpdate: Date.now()
       })
     })
