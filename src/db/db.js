@@ -1,6 +1,11 @@
-const Database = require("better-sqlite3")
-const db = new Database("database.db")
+const { PrismaClient } = require('@prisma/client')
 
-db.pragma('foreign_keys = ON')
+const globalForPrisma = globalThis
 
-module.exports = db
+const prisma = globalForPrisma.prisma ?? new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['query', 'error'] : ['error'],
+})
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+
+module.exports = prisma
