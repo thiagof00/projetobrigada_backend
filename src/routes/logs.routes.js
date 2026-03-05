@@ -1,24 +1,19 @@
 const express = require('express')
-const db = require('../db/db')
+const prisma = require('../db/db')
 const router = express.Router()
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const { ocorrencia_id, descricao } = req.body
-
-  db.prepare(`
-    INSERT INTO log_ocorrencia (ocorrencia_id, descricao)
-    VALUES (?, ?)
-  `).run(ocorrencia_id, descricao)
-
+  await prisma.logOcorrencia.create({
+    data: { ocorrencia_id: Number(ocorrencia_id), descricao }
+  })
   res.json({ sucesso: true })
 })
 
-router.get('/:ocorrencia_id', (req, res) => {
-  const logs = db.prepare(`
-    SELECT * FROM log_ocorrencia
-    WHERE ocorrencia_id = ?
-  `).all(req.params.ocorrencia_id)
-
+router.get('/:ocorrencia_id', async (req, res) => {
+  const logs = await prisma.logOcorrencia.findMany({
+    where: { ocorrencia_id: Number(req.params.ocorrencia_id) }
+  })
   res.json(logs)
 })
 

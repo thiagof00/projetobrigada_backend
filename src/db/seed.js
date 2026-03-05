@@ -1,46 +1,42 @@
-const db = require('./db')
+const prisma = require('./db')
 
-// limpa dados (opcional)
-db.exec(`
-  DELETE FROM log_ocorrencia;
-  DELETE FROM usuario_ocorrencia;
-  DELETE FROM ocorrencia;
-  DELETE FROM dispositivo;
-  DELETE FROM usuario;
-`)
+async function seed() {
+  // Limpa dados
+  await prisma.logOcorrencia.deleteMany()
+  await prisma.usuarioOcorrencia.deleteMany()
+  await prisma.ocorrencia.deleteMany()
+  await prisma.dispositivo.deleteMany()
+  await prisma.usuario.deleteMany()
 
-// USUÁRIOS
-const usuarios = [
-  { nome: 'Vitorya Canabarro', cpf: "00221552014", telefone: "55984280556", email: 'joao@email.com', perfil: 'CIVIL' },
-  { nome: 'Thiago Ribeiro', cpf: "04570115055", telefone: "51984280556", email: 'brigada@email.com', perfil: 'BRIGADA' },
-  { nome: 'Operador Interno', cpf:"44116613061", telefone: "54984280556", email: 'interno@email.com', perfil: 'INTERNO' }
-]
+  // Usuários
+  const civil = await prisma.usuario.create({
+    data: { nome: 'Vitorya Canabarro', cpf: '00221552014', telefone: '55984280556', email: 'joao@email.com', perfil: 'CIVIL' }
+  })
+  await prisma.usuario.create({
+    data: { nome: 'Thiago Ribeiro', cpf: '04570115055', telefone: '51984280556', email: 'brigada@email.com', perfil: 'BRIGADA' }
+  })
+  await prisma.usuario.create({
+    data: { nome: 'Operador Interno', cpf: '44116613061', telefone: '54984280556', email: 'interno@email.com', perfil: 'INTERNO' }
+  })
 
-const insertUsuario = db.prepare(`
-  INSERT INTO usuario (nome, cpf, telefone, email, perfil)
-  VALUES (@nome, @cpf, @telefone, @email, @perfil)
-`)
+  // Dispositivo
+  await prisma.dispositivo.create({
+    data: { usuario_id: civil.id, uuid: 'UUID-123456', descricao: 'Celular principal' }
+  })
 
-usuarios.forEach(u => insertUsuario.run(u))
+  // Ocorrência
+  const ocorrencia = await prisma.ocorrencia.create({
+    data: { usuario_id: civil.id, latitude: -23.5505, longitude: -46.6333 }
+  })
 
-// DISPOSITIVO
-const user = db.prepare(`SELECT id FROM usuario WHERE perfil='CIVIL'`).get()
+  // Log
+  await prisma.logOcorrencia.create({
+    data: { ocorrencia_id: ocorrencia.id, descricao: 'Ocorrência criada via seed' }
+  })
 
-db.prepare(`
-  INSERT INTO dispositivo (usuario_id, uuid, descricao)
-  VALUES (?, ?, ?)
-`).run(user.id, 'UUID-123456', 'Celular principal')
+  console.log('🌱 Seed executado com sucesso')
+}
 
-// OCORRÊNCIA
-const ocorrencia = db.prepare(`
-  INSERT INTO ocorrencia (usuario_id, latitude, longitude)
-  VALUES (?, ?, ?)
-`).run(user.id, -23.5505, -46.6333)
-
-// LOG
-db.prepare(`
-  INSERT INTO log_ocorrencia (ocorrencia_id, descricao)
-  VALUES (?, ?)
-`).run(ocorrencia.lastInsertRowid, 'Ocorrência criada via seed')
-
-console.log('🌱 Seed executado com sucesso')
+seed()
+  .catch(e => { console.error(e); process.exit(1) })
+  .finally(() => prisma.$disconnect())
