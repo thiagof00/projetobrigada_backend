@@ -1,9 +1,11 @@
-const prisma = require('./db')
+const sequelize = require('./db')
+require('./models')
 
 async function initDB() {
   try {
-    await prisma.$connect()
-    console.log('✅ Banco de dados conectado via Prisma (PostgreSQL)')
+    await sequelize.authenticate()
+    await sequelize.sync()
+    console.log('✅ Banco de dados conectado via Sequelize (PostgreSQL)')
   } catch (err) {
     console.error('❌ Erro ao conectar ao banco de dados:', err)
     process.exit(1)
