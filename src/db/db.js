@@ -1,11 +1,12 @@
-const { PrismaClient } = require('@prisma/client')
+require('dotenv').config()
+const { Sequelize } = require('sequelize')
 
-const globalForPrisma = globalThis
-
-const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error'] : ['error'],
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  dialect: 'postgres',
+  dialectOptions: {
+    ssl: { require: true, rejectUnauthorized: false }
+  },
+  logging: process.env.NODE_ENV === 'development' ? console.log : false,
 })
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
-
-module.exports = prisma
+module.exports = sequelize
