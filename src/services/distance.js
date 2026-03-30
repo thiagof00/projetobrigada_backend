@@ -1,9 +1,9 @@
 function calcularDistancia(lat1, lon1, lat2, lon2) {
   const R = 6371 // km
-  const Rad = (val) => val * Math.PI / 180 // fix: era /100
+  const Rad = (val) => val * Math.PI / 180
 
   const dLat = Rad(lat2 - lat1)
-  const dLon = Rad(lon2 - lon1) // fix: lon1 agora existe como parâmetro
+  const dLon = Rad(lon2 - lon1)
 
   const a =
     Math.sin(dLat / 2) ** 2 +
