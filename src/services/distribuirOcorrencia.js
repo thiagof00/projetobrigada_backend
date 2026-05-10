@@ -2,40 +2,56 @@ const { calcularDistancia } = require('./distance')
 const { getBrigadistasOnline } = require('../sockets/presence')
 
 /**
- * Retorna o brigadista livre mais próximo dentro do raio.
- * Se nenhum tiver localização registrada, retorna o primeiro livre disponível.
+ * Retorna lista de brigadistas livres ordenados por proximidade.
+ * Pode ignorar IDs já tentados.
  */
-function encontrarBrigadistaMaisProximo(latitude, longitude, raioMaxKm = 50) {
+function encontrarBrigadistaMaisProximo(
+  latitude,
+  longitude,
+  raioMaxKm = 50,
+  ignorados = new Set()
+) {
   const brigadistasOnline = getBrigadistasOnline()
 
-  let maisProximo = null
-  let menorDistancia = Infinity
-  let primeiraSemLocalizacao = null
+  const candidatosComLocalizacao = []
+  const candidatosSemLocalizacao = []
 
   for (const [userId, data] of brigadistasOnline.entries()) {
     if (data.ocupado) continue
-    if (data.notificadoOcorrencia != null) continue // já aguarda resposta de outra ocorrência
+    if (data.notificadoOcorrencia != null) continue
+    if (ignorados.has(userId)) continue
 
-    // Brigadista sem localização: guarda como fallback
+    // sem localização → fallback
     if (!data.latitude || !data.longitude) {
-      if (!primeiraSemLocalizacao) {
-        primeiraSemLocalizacao = { userId, socketId: data.socketId, distancia: null }
-      }
+      candidatosSemLocalizacao.push({
+        userId,
+        socketId: data.socketId,
+        distancia: null
+      })
       continue
     }
 
-    const distancia = calcularDistancia(latitude, longitude, data.latitude, data.longitude)
+    const distancia = calcularDistancia(
+      latitude,
+      longitude,
+      data.latitude,
+      data.longitude
+    )
 
     if (distancia > raioMaxKm) continue
 
-    if (distancia < menorDistancia) {
-      menorDistancia = distancia
-      maisProximo = { userId, socketId: data.socketId, distancia }
-    }
+    candidatosComLocalizacao.push({
+      userId,
+      socketId: data.socketId,
+      distancia
+    })
   }
 
-  // Prefere o mais próximo com localização; fallback para qualquer um livre
-  return maisProximo ?? primeiraSemLocalizacao ?? null
+  // ordena por distância
+  candidatosComLocalizacao.sort((a, b) => a.distancia - b.distancia)
+
+  // retorna todos (primeiro os com localização, depois fallback)
+  return [...candidatosComLocalizacao, ...candidatosSemLocalizacao]
 }
 
 module.exports = { encontrarBrigadistaMaisProximo }
